@@ -1,0 +1,72 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{TeX Gyre Termes}}
+\IfFontExistsTF{Arial}{\setsansfont{Arial}}{\setsansfont{TeX Gyre Heros}}
+\usepackage[left=2.7cm,right=2.2cm,top=2.4cm,bottom=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,graphicx,booktabs,array,longtable,tabularx,float,setspace}
+\usepackage[unicode,hidelinks]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\renewcommand{\figurename}{Hình}
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\contentsname}{MỤC LỤC}
+\renewcommand{\refname}{TÀI LIỆU THAM KHẢO}
+\setlength{\parindent}{1cm}
+\setlength{\parskip}{4pt}
+\setstretch{1.15}
+\emergencystretch=2em
+\newcommand{\fig}[3]{\begin{figure}[H]\centering\includegraphics[width=#2\linewidth]{images/#1}\caption{#3}\end{figure}}
+\begin{document}
+\begin{titlepage}
+\centering
+{\large\bfseries ĐẠI HỌC PHENIKAA\\TRƯỜNG CÔNG NGHỆ THÔNG TIN PHENIKAA\par}
+\vspace{.7cm}
+\includegraphics[width=3.2cm]{images/phenikaa.png}
+\vspace{.65cm}
+
+{\LARGE\bfseries BÁO CÁO BÀI TẬP LỚN\par}
+\vspace{.4cm}
+{\large\bfseries MÔN: MẠNG NƠRON VÀ HỌC SÂU\par}
+\vspace{.65cm}
+{\Large\bfseries AdaZero-DCE: Điều chỉnh số vòng lặp\\đường cong thích ứng cho tăng cường\\ảnh thiếu sáng\par}
+\vspace{.9cm}
+\begin{tabular}{ll}
+\textbf{Giảng viên:} & TS. Đặng Thị Thúy An\\[5pt]
+\textbf{Sinh viên:} & Trần Minh Sang -- 24100012\\[5pt]
+& Ngô Quang Thiện -- 24102651\\[5pt]
+\textbf{Lớp học phần:} & Mạng nơron và học sâu-1-1-26(N02)
+\end{tabular}
+\vspace{.7cm}
+
+\small Mã nguồn: \url{https://github.com/ZesyC/AdaZero-DCE}
+\vfill
+{\large Hà Nội, tháng 10 năm 2026}
+\end{titlepage}
+\pagenumbering{roman}
+\begingroup\small\setstretch{1}
+\tableofcontents
+\endgroup
+\clearpage
+\pagenumbering{arabic}
+\input{sections/content}
+\clearpage
+\begin{thebibliography}{9}
+\bibitem{zerodce} C. Guo và cộng sự, ``Zero-Reference Deep Curve Estimation for Low-Light Image Enhancement,'' CVPR, 2020. \url{https://github.com/Li-Chongyi/Zero-DCE}.
+\bibitem{lol} C. Wei, W. Wang, W. Yang và J. Liu, ``Deep Retinex Decomposition for Low-Light Enhancement,'' BMVC, 2018. \url{https://daooshee.github.io/BMVC2018website/}.
+\bibitem{lolv2} W. Yang, H. Huang, W. Wang, S. Wang và J. Liu, ``Sparse Gradient Regularized Deep Retinex Network for Robust Low-Light Image Enhancement,'' IEEE Transactions on Image Processing, 2021. \url{https://github.com/flyywh/CVPR-2020-Semi-Low-Light}.
+\bibitem{varlide} W. Dong, H. Zhou, J. Lin và J. Chen, ``Zero-Reference Joint Low-Light Enhancement and Deblurring via Visual Autoregressive Modeling with VLM-Derived Modulation,'' arXiv:2511.18591, 2025. \url{https://arxiv.org/abs/2511.18591}.
+\bibitem{ssim} Z. Wang, A. C. Bovik, H. R. Sheikh và E. P. Simoncelli, ``Image Quality Assessment: From Error Visibility to Structural Similarity,'' IEEE Transactions on Image Processing, 13(4), 600--612, 2004.
+\bibitem{skimage} scikit-image, tài liệu \texttt{skimage.metrics.structural\_similarity}. \url{https://scikit-image.org/docs/stable/api/skimage.metrics.html}. Truy cập ngày 19/10/2026.
+\bibitem{artifact} Nhóm thực hiện, ``AdaZero DCE Complete Evaluation Report,'' notebook Kaggle và các bảng CSV đi kèm, ngày 19/10/2026. \url{https://www.kaggle.com/code/sangtranminh211/adazero-dce-complete-evaluation-report}. Notebook riêng tư; bản đã thực thi được lưu trong thư mục \texttt{notebook/} của dự án.
+\end{thebibliography}
+\clearpage
+\appendix
+\section{Bảng kết quả chi tiết và khả năng tái lập}
+\input{tables/seeds}
+\subsection{Quy trình chạy lại}
+Cài thư viện theo \texttt{requirements.txt}. Để tái lập huấn luyện head, dùng \texttt{experiment.py} với \texttt{--train-pairs 485 --epochs 1200 --seeds 0 1 2}. Đây là lệnh huấn luyện; notebook báo cáo không gọi lệnh này. Để chỉ kiểm tra kết quả, sử dụng notebook đã cung cấp cùng hai nguồn output Kaggle của lần train full và lần đánh giá LOLv2 trước đó.
+
+Notebook lần lượt kiểm tra SHA256, tải dữ liệu test, chạy inference, tính metric, xuất CSV và kiểm tra sai khác so với artifact trước trong sai số tuyệt đối $10^{-6}$. Tất cả cell cần hoàn tất và cell cuối phải in thông báo PASS. Bản có outputs được tạo bằng thực thi \texttt{nbclient} trên Kaggle rồi tải về, không chèn số liệu thủ công.
+
+Các bảng trong báo cáo được sinh từ CSV của lần chạy này. Manifest lưu seed, mã băm checkpoint, phiên bản PyTorch, GPU và số bản ghi. Lịch sử loss được đọc từ lần train full trước đó; không diễn giải đồ thị này là một lần huấn luyện mới. Thời gian inference trong notebook bao gồm xử lý và tính metric, không phải phép đo latency triển khai.
+\end{document}

@@ -1,0 +1,20 @@
+{
+  "info": {
+    "datasetId": 4772549,
+    "datasetSlug": "lol-v2-dataset",
+    "ownerUser": "tanhyml",
+    "usabilityRating": 0.0625,
+    "totalViews": 6168,
+    "totalVotes": 8,
+    "totalDownloads": 2476,
+    "title": "LOL-v2-Dataset",
+    "subtitle": "",
+    "description": "",
+    "licenses": [
+      {
+        "name": "unknown"
+      }
+    ],
+    "expectedUpdateFrequency": "not specified"
+  }
+}

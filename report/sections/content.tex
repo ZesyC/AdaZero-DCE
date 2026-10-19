@@ -1,0 +1,233 @@
+\section{Giới thiệu bài toán}
+\subsection{Đặt vấn đề}
+Ảnh thu nhận trong điều kiện thiếu sáng thường có độ tương phản thấp, vùng tối khó quan sát và màu sắc không rõ ràng. Tăng cường ảnh thiếu sáng nhằm tạo ảnh dễ quan sát hơn nhưng vẫn giữ cấu trúc và nội dung của cảnh. Việc tăng độ sáng đồng loạt có thể làm các vùng vốn đủ sáng trở nên quá sáng, trong khi chi tiết tại vùng tối chưa chắc được khôi phục. Vì vậy, mức độ điều chỉnh cần phù hợp với từng ảnh đầu vào.
+
+Zero-DCE \cite{zerodce} tiếp cận bài toán bằng cách ước lượng các đường cong biến đổi điểm ảnh. Mạng DCE-Net sinh bản đồ hệ số, sau đó áp dụng nhiều bước đường cong để tạo ảnh tăng cường. Mã nguồn nền trong dự án sử dụng tám bước. Cách xử lý cố định này đơn giản, nhưng đặt ra câu hỏi: liệu mọi ảnh đều cần dùng đủ tám bước, đặc biệt khi ảnh đầu vào chỉ thiếu sáng ở mức vừa phải?
+
+Từ câu hỏi đó, nhóm xây dựng AdaZero-DCE: giữ nguyên DCE-Net và học một mạng hồi quy nhỏ để dự đoán số bước từ đặc trưng độ sáng. Mục tiêu của bài tập là triển khai một thay đổi có thể kiểm chứng, đo chênh lệch với baseline trên cùng giao thức và phân tích phạm vi mà thay đổi đó có ích. Báo cáo không đặt mục tiêu khẳng định phương pháp tốt hơn mọi mô hình tăng cường ảnh hiện có.
+
+\subsection{Đầu vào, đầu ra và phạm vi}
+Đầu vào là ảnh RGB $I\in[0,1]^{H\times W\times3}$. Đầu ra gồm ảnh tăng cường $\widehat I$ có cùng kích thước và số vòng $n\in\{1,\ldots,8\}$. Trong suy luận, hệ thống chỉ quan sát $I$; ảnh tham chiếu đủ sáng $Y$ được sử dụng để đánh giá, không tham gia quyết định số vòng.
+
+Huấn luyện được giới hạn ở head hồi quy. Trọng số DCE-Net \texttt{Epoch99.pth} luôn đóng băng. Dữ liệu có cặp chỉ được dùng để xây dựng nhãn số vòng tối ưu trên tập train. Vì head học từ nhãn được suy ra qua ảnh tham chiếu, toàn bộ phương pháp AdaZero-DCE trong báo cáo là một mở rộng có giám sát, dù backbone xuất phát từ phương pháp zero-reference. Phân biệt này giúp tránh hiểu sai tên gọi của mô hình.
+
+\subsection{Các hướng tiếp cận liên quan}
+Các phép biến đổi như tăng gain hoặc gamma có ưu điểm là dễ sử dụng, song mức biến đổi cần được lựa chọn phù hợp. Nhóm phương pháp dựa trên Retinex mô hình hóa quan hệ giữa phản xạ và chiếu sáng; Retinex-Net là một ví dụ học sâu gắn với dữ liệu LOL \cite{lol}. Zero-DCE học bản đồ đường cong mà không yêu cầu cặp ảnh tham chiếu trong cách huấn luyện gốc \cite{zerodce}.
+
+Ý tưởng điều chỉnh thích ứng đã được nghiên cứu trong các công trình khác. VAR-LIDE sử dụng thông tin visibility từ mô hình thị giác-ngôn ngữ để điều kiện hóa quá trình tăng cường đường cong trong bài toán kết hợp tăng sáng và khử mờ \cite{varlide}. AdaZero-DCE trong bài tập này sử dụng đặc trưng thống kê đơn giản và một head nhỏ để chọn tiền tố của tám bước đã có. Nhóm không tuyên bố đây là công trình đầu tiên sử dụng cơ chế thích ứng, và không đưa ra so sánh định lượng với VAR-LIDE vì chưa tái lập công trình đó trong cùng giao thức.
+
+\subsection{Nội dung thực hiện}
+Nhóm thực hiện đầy đủ việc tạo 1940 nhãn oracle từ 485 cặp train, huấn luyện ba head với cấu hình cố định và đánh giá fixed-8/adaptive trên cùng implementation. Hai nhóm dữ liệu kiểm tra gồm LOLv1 eval15 với ba điều kiện giả lập bổ sung, và LOLv2-real Test để kiểm tra chuyển miền. Notebook báo cáo chạy lại đánh giá bằng các checkpoint đã hoàn tất, lưu outputs, CSV và hình ảnh để truy vết số liệu \cite{artifact}.
+
+\section{Xây dựng và kiểm tra dữ liệu}
+\subsection{LOLv1 và phân chia tập dữ liệu}
+LOLv1 là dữ liệu ảnh thiếu sáng có ảnh tham chiếu đủ sáng \cite{lol}. Dự án sử dụng nguyên phân chia \texttt{our485} gồm 485 cặp để train head và \texttt{eval15} gồm 15 cặp để đánh giá. Các cặp low/high được ghép theo tên file. Trước khi huấn luyện, pipeline kiểm tra số lượng, tập tên file và mã băm nội dung giữa hai tập để phát hiện ảnh trùng.
+
+Với mỗi cặp train $(I,Y)$, bốn đầu vào được tạo thành:
+\begin{equation}
+\mathcal{I}(I,Y)=\{I,\;0.3Y,\;0.45Y,\;0.6Y\}.
+\end{equation}
+Như vậy, số mẫu dùng tính oracle và train head là $485\times4=1940$. Ký hiệu \texttt{factor=1.0} trong artifact là ảnh low gốc $I$, không phải ảnh $Y\times1.0$. Ba hệ số còn lại là ảnh GT nhân trực tiếp trên miền RGB đã chuẩn hóa.
+
+\begin{table}[H]\centering
+\caption{Phân chia dữ liệu được sử dụng trong dự án.}
+\begin{tabular}{lrrl}\toprule
+Tập & Cặp gốc & Đầu vào & Vai trò\\\midrule
+LOLv1 our485 & 485 & 1940 & Train head, tính oracle\\
+LOLv1 eval15 & 15 & 60 & Đánh giá 4 điều kiện\\
+LOLv2-real Test & 100 & 100 & Đánh giá khái quát\\\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ý nghĩa của các mức sáng giả lập}
+Nhân ảnh GT với hệ số nhỏ hơn một tạo ra các trường hợp kiểm soát được về cường độ. Điều này giúp khảo sát việc sử dụng tám vòng có thể vượt quá mức cần thiết khi ảnh chỉ bị giảm cường độ đơn giản. Tuy nhiên, phép nhân trên ảnh sRGB không mô phỏng toàn bộ quá trình chụp ảnh thiếu sáng. Nhiễu cảm biến, sai lệch màu, mất chi tiết do phơi sáng và xử lý trong camera không được tái tạo đầy đủ.
+
+\fig{data_conditions.png}{1}{Một cặp eval15 và các điều kiện giả lập trong notebook. Ba ảnh giữa được tạo từ cùng GT.}
+\textbf{Nhận xét:} Các biến thể của cùng một cặp không phải các cảnh độc lập. Tập train vẫn chỉ có 485 cảnh gốc và tập eval15 vẫn chỉ có 15 cảnh. Việc báo 1940 mẫu không đồng nghĩa tăng số cảnh lên bốn lần. Tương tự, ba seed không làm tăng số ảnh test độc lập.
+
+\subsection{LOLv2-real và kiểm soát nguồn dữ liệu}
+LOLv2 là phần mở rộng của LOL, được giới thiệu trong công trình về Deep Retinex Network \cite{lolv2}. Lần đánh giá bổ sung chỉ sử dụng 100 cặp thuộc \texttt{Real\_captured/Test}. Các ảnh Low và Normal được ghép theo mã số, ví dụ \texttt{low00690.png} với \texttt{normal00690.png}. Không tải phần Train, không tạo oracle LOLv2 và không cập nhật tham số từ tập này.
+
+Notebook tải riêng 200 ảnh test từ mirror Kaggle \texttt{tanhyml/lol-v2-dataset}, theo danh sách file đã lưu. Tổng dung lượng kiểm tra là 75,970,040 byte. Mỗi ảnh được kiểm tra kích thước byte, khả năng giải mã và lưu SHA256 để truy vết. Đây là kiểm tra tính nhất quán của dữ liệu thực tế đã dùng; chưa đối chiếu checksum của mirror với bản phát hành Google Drive của tác giả. Hạn chế nguồn dữ liệu này được giữ rõ trong báo cáo.
+
+\subsection{Tiền xử lý và tránh rò rỉ dữ liệu}
+Ảnh được đọc dưới dạng RGB float32 rồi chia cho 255. Không resize, crop, lượng tử hóa đầu ra trước khi tính metric hoặc điều chỉnh độ sáng đầu ra theo GT. Kích thước low và GT phải khớp. Trong lần chạy này, ảnh giữ độ phân giải gốc $600\times400$.
+
+Chuẩn hóa đặc trưng dùng trung bình và độ lệch chuẩn từ 1940 mẫu train. Cùng các thống kê này được nạp lại khi đánh giá eval15 và LOLv2. Không fit lại normalization trên test. Mọi lựa chọn $n$ được thực hiện trước khi tính PSNR/SSIM với GT. Đây là điều kiện cần để phép đo phản ánh khả năng suy luận thực tế.
+
+\section{Phương pháp AdaZero-DCE}
+\subsection{Đường cong tăng cường của Zero-DCE}
+Một dạng biểu diễn đường cong thường dùng là $x+\alpha x(1-x)$. Trong implementation đang sử dụng, quy ước dấu tương đương được viết:
+\begin{equation}\label{eq:curve}
+x_t=x_{t-1}+r_t\odot(x_{t-1}^{2}-x_{t-1}),\qquad x_0=I,
+\end{equation}
+trong đó $r_t$ là bản đồ hệ số cho bước thứ $t$ và $\odot$ là phép nhân từng phần tử. Hai cách viết tương đương khi $r_t=-\alpha_t$. Do đó, không đổi dấu hệ số chỉ để làm công thức giống cách trình bày trong tài liệu khác.
+
+DCE-Net sinh tám bản đồ RGB từ ảnh ban đầu trong một lần forward. Với $r_t\in[-1,1]$, phép biến đổi duy trì miền giá trị $[0,1]$ về mặt toán học. Đạo hàm theo giá trị điểm ảnh là $1+r_t(2x-1)$, không âm trên miền này khi xem hệ số tại điểm ảnh là cố định. Tính chất đó lý giải vai trò của đường cong trong biến đổi cường độ, nhưng không đảm bảo chất lượng tăng cường tối ưu cho mọi cảnh.
+
+Fixed-8 trả về $x_8$. AdaZero-DCE trả về $x_n$, tức sử dụng $n$ bước đầu tiên của cùng chuỗi bản đồ. Phương pháp không chọn tùy ý một tập con bản đồ, không dùng lại một bản đồ cho mọi bước và không chạy lại DCE-Net tại từng bước.
+
+\subsection{Nhãn oracle trên tập train}
+Với mỗi đầu vào train, pipeline tính đủ tám ảnh $x_1,\ldots,x_8$ và chọn:
+\begin{equation}
+n^*=\underset{n\in\{1,\ldots,8\}}{\operatorname{argmin}}\ \frac{1}{3HW}\|x_n-Y\|_2^2.
+\end{equation}
+Tối thiểu hóa MSE tương đương tối đa hóa PSNR khi miền giá trị cố định. Implementation tính sai số với float64; nếu nhiều giá trị cực tiểu bằng nhau, thứ tự tìm kiếm chọn chỉ số nhỏ nhất. Oracle chỉ là lựa chọn tốt nhất trong tám ảnh ứng viên do backbone này sinh ra, không phải nghiệm tối ưu cho mọi phương pháp tăng cường ảnh.
+
+Nhãn oracle được tính cho toàn bộ 1940 mẫu. Không áp dụng ngưỡng tối để bỏ qua việc tính nhãn. Quy tắc ngưỡng được sử dụng ở suy luận; cách tổ chức này bảo đảm cache train vẫn phản ánh đầy đủ các ứng viên. Oracle không được tính trên eval15 hoặc LOLv2 trong giao thức đánh giá hiện tại.
+
+\subsection{Đặc trưng độ sáng và head hồi quy}
+Tại mỗi điểm ảnh, giá trị dùng cho thống kê là $g=(R+G+B)/3$. Đây là trung bình ba kênh, không phải độ chói có trọng số theo mô hình cảm nhận. Vector đặc trưng gồm:
+\begin{equation}
+f(I)=[\mu_g,\sigma_g,h_1,\ldots,h_8]\in\mathbb{R}^{10},
+\end{equation}
+trong đó $h_k$ là tỷ lệ điểm ảnh trong bin thứ $k$ của histogram đều trên $[0,1]$. Tổng tám thành phần histogram bằng một. Chuẩn hóa từng chiều theo tập train:
+\begin{equation}
+\widetilde f_j=\frac{f_j-\mu_j^{\mathrm{train}}}{\sigma_j^{\mathrm{train}}+10^{-8}}.
+\end{equation}
+Head gồm ba lớp tuyến tính theo kích thước $10\rightarrow128\rightarrow64\rightarrow1$, ReLU ở hai lớp ẩn và dropout 0.1 sau ReLU thứ nhất. Số tham số là:
+\begin{equation}
+(10\cdot128+128)+(128\cdot64+64)+(64\cdot1+1)=9729.
+\end{equation}
+Kích thước này nhỏ so với một mạng xử lý ảnh đầy đủ. Tuy nhiên, đặc trưng toàn cục bỏ qua bố trí không gian: hai ảnh có histogram giống nhau có thể chứa các vùng sáng tối rất khác nhau. Đây là giới hạn biểu diễn quan trọng khi diễn giải kết quả chuyển miền.
+
+\subsection{Hàm mất mát và cấu hình huấn luyện}
+Đầu ra liên tục $q_\theta(\widetilde f)$ được hồi quy về nhãn $n^*$. SmoothL1 với tham số mặc định $\beta=1$ có dạng:
+\begin{equation}
+\ell(e)=\begin{cases}\tfrac12 e^2,&|e|<1,\\|e|-\tfrac12,&|e|\ge1,\end{cases}\qquad e=q_\theta(\widetilde f)-n^*.
+\end{equation}
+Hàm mất mát trung bình trên toàn bộ tập train được tối ưu bằng Adam. Cấu hình không thay đổi giữa ba seed, được trình bày ở Bảng~\ref{tab:config}.
+\begin{table}[H]\centering\caption{Cấu hình cố định của lần train full.}\label{tab:config}
+\begin{tabular}{ll}\toprule
+Thành phần & Giá trị\\\midrule
+DCE-Net & Epoch99, đóng băng\\
+Head & 10--128--64--1, 9729 tham số\\
+Activation / dropout & ReLU / 0.1\\
+Loss & SmoothL1, $\beta=1$\\
+Optimizer & Adam, learning rate $5\times10^{-3}$\\
+Scheduler & CosineAnnealingLR, $T_{\max}=1200$\\
+Epoch / batch & 1200 / full batch 1940\\
+Seed & 0, 1, 2\\
+Ngưỡng ảnh tối & mean $<0.10$ thì $n=8$\\\bottomrule
+\end{tabular}
+\end{table}
+Head được train trên CPU theo implementation hiện tại; GPU T4 được dùng cho DCE-Net khi tạo oracle và đánh giá. Việc gọi toàn bộ phiên chạy là ``trên Kaggle GPU'' không có nghĩa mọi phép toán của head đều được đặt trên GPU. Checkpoint lưu cả state dict và thống kê chuẩn hóa để suy luận nhất quán.
+
+\subsection{Quy tắc suy luận}
+Với một ảnh mới, số vòng được quyết định bởi:
+\begin{equation}
+n(I)=\begin{cases}
+8,&\mu_g<0.10,\\
+\operatorname{clip}(\operatorname{round}(q_\theta(\widetilde f)),1,8),&\mu_g\ge0.10.
+\end{cases}
+\end{equation}
+Quy tắc dùng dấu nhỏ hơn nghiêm ngặt; trường hợp mean bằng 0.10 đi qua head. Dropout được tắt bằng chế độ eval. Backbone và head đều không cập nhật gradient trong đánh giá.
+
+\begin{center}
+\fbox{\parbox{.88\linewidth}{\centering
+Ảnh RGB đầu vào\\$\downarrow$\\
+Mean, std, histogram $\longrightarrow$ guard hoặc head $\longrightarrow n$\\[4pt]
+Ảnh RGB $\longrightarrow$ DCE-Net đóng băng $\longrightarrow r_1,\ldots,r_8$\\$\downarrow$\\
+Áp dụng $n$ bước đầu tiên $\longrightarrow$ ảnh tăng cường
+}}
+\end{center}
+\textbf{Nhận xét:} Guard đảm bảo nhánh ảnh rất tối trả về đúng kết quả fixed-8. Điều này không chứng minh head dự đoán tốt cho các ảnh đó, bởi head đã bị bỏ qua. Khi báo cáo kết quả cần chỉ ra tỷ lệ ảnh đi qua guard để người đọc biết phần nào thực sự kiểm tra head.
+
+\section{Thiết kế thực nghiệm và kết quả}
+\subsection{Mục tiêu và giao thức so sánh}
+Thực nghiệm kiểm tra ba câu hỏi: điều chỉnh số vòng có giúp các ảnh giả lập thiếu sáng vừa phải hay không; có giữ kết quả trên eval15 gốc hay không; và head LOLv1 có khái quát sang ảnh thật LOLv2 hay không. Baseline fixed-8 và adaptive dùng cùng backbone, ảnh đầu vào, GT và hàm tính metric. Khác biệt duy nhất trong phép so sánh là số bước đường cong được sử dụng.
+
+Không đối chiếu giá trị SSIM tuyệt đối với số kỳ vọng trong kế hoạch hoặc với bảng của công trình dùng implementation khác. Đại lượng chính là chênh lệch ghép cặp giữa hai phương pháp trong cùng lần chạy. Kết quả được tính cho cả ba seed, không chọn seed tốt nhất bằng test.
+
+\subsection{Các chỉ số đánh giá}
+Với RGB chuẩn hóa về $[0,1]$, PSNR được tính theo:
+\begin{equation}
+\operatorname{MSE}(\widehat I,Y)=\frac{1}{3HW}\sum_{p,c}(\widehat I_{p,c}-Y_{p,c})^2,\qquad
+\operatorname{PSNR}=-10\log_{10}(\operatorname{MSE}).
+\end{equation}
+PSNR cao hơn biểu thị sai số bình phương nhỏ hơn đối với cùng GT. Metric được tính cho từng ảnh rồi lấy trung bình; không lấy MSE của toàn bộ tập để đổi sang một PSNR chung.
+
+SSIM đánh giá quan hệ cấu trúc dựa trên thống kê cục bộ \cite{ssim}. Implementation dùng \texttt{skimage.metrics.structural\_similarity}, \texttt{data\_range=1}, \texttt{channel\_axis=2}, cửa sổ đều $7\times7$ và sample covariance \cite{skimage}. Không dùng Gaussian window hoặc chỉ kênh Y. Do lựa chọn cửa sổ, kênh màu và cách chuẩn hóa ảnh có thể thay đổi SSIM, toàn bộ kết luận chỉ dựa trên cặp fixed-8/adaptive được đo nhất quán.
+
+Với metric $M$, chênh lệch là $\Delta M=M_{\mathrm{adaptive}}-M_{\mathrm{fixed8}}$. Giá trị dương biểu thị cải thiện theo metric đó. Trung bình ba seed được tính từ trung bình theo ảnh của từng seed. Độ lệch chuẩn dùng mẫu số 3 (\texttt{ddof=0}); đây là biến thiên theo seed, không phải khoảng tin cậy theo ảnh.
+
+\subsection{Nguồn thực thi của báo cáo}
+Notebook mới được tổ chức theo các mục giải thích, cell thực thi, bảng và hình ngay sau bước tương ứng. Nó nạp nguyên ba checkpoint từ lần train full, xác minh mã băm và chạy lại inference. Lịch sử loss và oracle được đọc từ artifact train đã có, ghi rõ là dữ liệu lịch sử. Những bảng test trong báo cáo được sinh từ CSV mới của notebook này \cite{artifact}.
+
+\fig{training.png}{1}{Loss và phân bố oracle từ lần train full đã hoàn tất; notebook hiện tại dựng lại biểu đồ từ artifact.}
+\textbf{Nhận xét:} Phân bố nhãn không đều: số mẫu oracle bằng 8 là 878, trong khi không có mẫu oracle bằng 1. Vì vậy, bài toán không cung cấp lượng thông tin như nhau cho mọi số vòng. Loss train giảm chỉ cho biết khả năng khớp các nhãn đã có; nó không đủ để kết luận chất lượng ảnh test tiếp tục tăng khi train dài hơn.
+
+\subsection{Kết quả trên LOLv1 eval15}
+\input{tables/lolv1}
+\fig{lolv1_deltas.png}{1}{Chênh lệch adaptive so với fixed-8 trên eval15. Thanh sai số thể hiện độ lệch chuẩn qua ba seed.}
+\textbf{Nhận xét:} Trên ảnh low gốc, cả 15 ảnh đều có mean dưới 0.10 và được giữ ở $n=8$. Vì hai nhánh tạo cùng đầu ra, các metric bằng nhau. Kết quả này xác nhận tác dụng bảo toàn của guard trên tập đang xét, không phải một cải thiện do head học được.
+
+Ở mức GT$\times0.3$, SSIM tăng nhẹ nhưng PSNR giảm. Hai metric phản ánh các khía cạnh khác nhau, nên không thể kết luận adaptive tốt hơn đồng thời theo cả hai chỉ số ở điều kiện này. Ở mức GT$\times0.45$ và GT$\times0.6$, PSNR và SSIM cùng tăng, với mức tăng PSNR lớn hơn ở hệ số 0.6. Đây là bằng chứng phù hợp với giả thuyết giảm số vòng có ích khi biến đổi cường độ đầu vào đơn giản và tương đối gần ảnh đủ sáng.
+
+\fig{comparison_1.0.png}{1}{Ví dụ eval15 gốc: guard chọn $n=8$, fixed-8 và adaptive trùng nhau.}
+\fig{comparison_0.3.png}{1}{Ví dụ GT$\times0.3$: cùng một ảnh và một seed để minh họa, không thay cho kết quả trung bình.}
+\fig{comparison_0.45.png}{1}{Ví dụ GT$\times0.45$ với đầu vào, fixed-8, adaptive và GT.}
+\fig{comparison_0.6.png}{1}{Ví dụ GT$\times0.6$: đối chiếu ảnh đầu ra trong cùng điều kiện.}
+Các ví dụ lấy cặp đầu tiên theo thứ tự tên file và dùng seed 0, không chọn ảnh theo mức cải thiện cao nhất. Hình hiển thị được clip về miền hợp lệ để trình bày; bảng metric sử dụng trực tiếp đầu ra float theo giao thức đã nêu. Một ví dụ trực quan chỉ minh họa hành vi, không đại diện cho toàn bộ phân bố test.
+
+\subsection{Kết quả trên LOLv2-real Test}
+\input{tables/lolv2}
+\fig{lolv2_analysis.png}{1}{Phân bố mean RGB, ngưỡng guard và quan hệ giữa độ sáng với chênh lệch PSNR trên LOLv2-real.}
+\textbf{Nhận xét:} PSNR trung bình giảm trong cả ba seed, trong khi SSIM tăng rất nhỏ. Có 87/100 ảnh được guard giữ ở $n=8$. Với mỗi seed, 2 ảnh tăng PSNR, 87 ảnh bằng và 11 ảnh giảm. Do phần lớn ảnh không thay đổi, trung bình toàn tập có thể che khuất mức giảm trên nhóm thực sự dùng head.
+
+Trên 13 ảnh không đi qua guard, chênh lệch PSNR trung bình lần lượt xấp xỉ $-1.515$, $-1.414$ và $-1.737$ dB cho seed 0, 1 và 2. Như vậy, kết quả chưa chứng minh head khái quát tốt sang LOLv2-real. Việc SSIM tăng nhẹ không làm mất đi kết quả giảm PSNR, và không đủ để khẳng định cải thiện chất lượng cảm nhận khi chưa có đánh giá tương ứng.
+
+\section{Thảo luận}
+\subsection{Vì sao hiệu quả khác nhau giữa ảnh giả lập và ảnh thật?}
+Ba điều kiện giả lập được tạo bằng nhân trực tiếp GT với một hệ số. Chúng giữ nguyên cấu trúc cảnh và nhiều đặc trưng của GT; do đó, vấn đề điều chỉnh cường độ tương đối đơn giản hơn ảnh chụp thiếu sáng thật. Trong trường hợp này, sử dụng ít bước hơn có thể giúp tránh điều chỉnh vượt mức cần thiết. Kết quả tăng đồng thời PSNR/SSIM ở hệ số 0.45 và 0.6 phù hợp với cách giải thích đó.
+
+Ảnh thật có thể khác về nhiễu, màu sắc, chiếu sáng không đồng đều và xử lý của camera. Vector 10 chiều không mã hóa những yếu tố này một cách trực tiếp. Hai ảnh có mean gần nhau không nhất thiết cần cùng số bước. Đây là một giải thích khả dĩ cho kết quả LOLv2, nhưng chưa phải kết luận nhân quả vì dự án chưa có ablation riêng cho từng yếu tố.
+
+\subsection{Vai trò và giới hạn của guard}
+Ngưỡng 0.10 giúp tránh thay đổi những ảnh rất tối theo thống kê toàn cục. Trên eval15 gốc, nó phủ toàn bộ tập; trên LOLv2, nó phủ 87\%. Do đó, mức ``không giảm'' trên eval15 chỉ chứng minh quy tắc đã bảo toàn baseline ở những ảnh đó. Không nên sử dụng kết quả này để khẳng định head đúng cho mọi ảnh thiếu sáng.
+
+Ngưỡng được giữ nguyên từ kế hoạch. Nhóm không chọn lại ngưỡng bằng LOLv2 Test sau khi quan sát kết quả xấu. Nếu cần nghiên cứu ngưỡng tốt hơn, phải xây dựng tập validation riêng trong train và khóa cấu hình trước lần đánh giá cuối. Việc chỉnh trực tiếp theo test sẽ làm phép đo sau đó mất tính độc lập.
+
+\subsection{Train dài hơn có bảo đảm kết quả tăng?}
+Không có bảo đảm như vậy. SmoothL1 tối ưu dự đoán nhãn oracle, còn kết quả cuối phụ thuộc vào bước làm tròn, guard và mức sai khác giữa các ảnh ứng viên. Một thay đổi nhỏ ở đầu ra liên tục có thể không đổi $n$, hoặc làm $n$ nhảy sang số nguyên khác. Vì thế, loss giảm không dẫn đến PSNR/SSIM tăng đơn điệu.
+
+Lần train full đã tuân thủ 1200 epoch cho 1940 mẫu và ba seed. Kết quả hiện tại cho thấy hiệu quả phụ thuộc miền dữ liệu, thay vì chỉ phụ thuộc số epoch. Chưa có thí nghiệm sweep số epoch với validation độc lập, nên báo cáo không suy diễn rằng kéo dài huấn luyện sẽ giải quyết hạn chế chuyển miền. Tương tự, ba seed ổn định về dấu chênh lệch không thay thế cho đánh giá trên nhiều bộ dữ liệu.
+
+\subsection{Chi phí tính toán và tính công bằng}
+Số bước đường cong có thể giảm, nhưng DCE-Net vẫn sinh đủ tám bản đồ trong một forward. Vì vậy, không thể đồng nhất giảm từ tám xuống bốn bước với tăng tốc toàn hệ thống gấp đôi. Phần tiết kiệm chỉ nằm ở các phép áp dụng đường cong; head và trích đặc trưng còn bổ sung chi phí. Chưa có benchmark latency đồng bộ GPU trên phần cứng triển khai, nên báo cáo không đưa ra tỷ lệ tăng tốc.
+
+Notebook đánh giá dùng chung các ảnh ứng viên để tính cả fixed-8 và adaptive, thuận tiện cho so sánh chất lượng và bảo đảm cùng backbone. Thời gian notebook vì thế không đại diện cho thời gian gọi riêng hàm inference trong ứng dụng. Muốn đánh giá hiệu năng cần đo riêng đường chạy triển khai, warm-up, đồng bộ thiết bị và thống kê nhiều lần chạy.
+
+\subsection{Hạn chế của thực nghiệm}
+Tập eval15 nhỏ và ba ảnh giả lập của một cảnh có tương quan mạnh. Độ lệch chuẩn qua ba seed chỉ đo độ nhạy đối với khởi tạo head; chưa có bootstrap theo cảnh hoặc kiểm định thống kê. Vì vậy, các chênh lệch nhỏ cần được diễn giải thận trọng.
+
+Nhãn oracle tối ưu PSNR, không tối ưu trực tiếp SSIM hoặc độ dễ quan sát đối với con người. Head dùng đặc trưng toàn cục và lựa chọn một số vòng chung cho toàn ảnh. DCE-Net được giữ nguyên nên khả năng sửa nhiễu, màu và chi tiết vẫn bị giới hạn bởi backbone. Ngoài ra, nguồn LOLv2 mirror chưa được đối chiếu checksum với bản tác giả. Các hạn chế này xác định phạm vi của kết luận, không được che bởi kết quả thuận lợi trên dữ liệu giả lập.
+
+\section{Tổ chức chương trình và khả năng sử dụng}
+\subsection{Các thành phần trong repository}
+\begin{table}[H]\centering\small
+\caption{Vai trò các thành phần hiện có và artifact bổ sung.}
+\begin{tabularx}{\linewidth}{lX}\toprule
+Thành phần & Vai trò\\\midrule
+\texttt{zero\_dce\_adaptive\_n.py} & Đặc trưng, head, oracle, suy luận thích ứng.\\
+\texttt{experiment.py} & Train head và đánh giá LOLv1.\\
+\texttt{evaluate\_lolv2.py} & Kiểm tra test LOLv2 bằng checkpoint đóng băng.\\
+\texttt{infer.py} & Tăng cường một ảnh bằng head đã lưu.\\
+\texttt{AdaZero-DCE\_code/} & Backbone và tài nguyên nền kế thừa Zero-DCE.\\
+\texttt{notebook/} & Notebook trình bày mới, bản có outputs và CSV.\\
+\texttt{report/} & Nguồn LaTeX, bảng và hình của báo cáo.\\\bottomrule
+\end{tabularx}
+\end{table}
+Trong giai đoạn hoàn thiện báo cáo, mã nguồn hiện có và checkpoint được giữ nguyên. Các tên Zero-DCE thuộc bài báo, checkpoint, mã nền hoặc tài nguyên tham chiếu vẫn giữ đúng nguồn gốc. Tên AdaZero-DCE dùng cho phương pháp mở rộng và tài liệu hiện hành; không thay tên công trình gốc để tạo cảm giác toàn bộ repository do nhóm xây dựng mới.
+
+\subsection{Notebook có outputs và luồng sử dụng}
+Notebook trình bày lần lượt môi trường, dữ liệu, mô hình, lịch sử train, đánh giá LOLv1, đánh giá LOLv2 và kiểm tra tái lập. Các cell gọi implementation đã có thay vì chép lại một phiên bản metric khác. Bảng kết quả xuất ra CSV để có thể kiểm tra độc lập với phần diễn giải.
+
+Đối với một ảnh sử dụng thực tế, chương trình đọc RGB, kiểm tra miền pixel, nạp backbone cùng head và thống kê train, dự đoán $n$ rồi áp dụng các bước đường cong. Không cần GT. Mô hình này có thể dùng làm thành phần thử nghiệm tăng sáng, nhưng kết quả LOLv2 cho thấy chưa đủ cơ sở để khuyến nghị thay fixed-8 cho mọi ảnh thật.
+
+\section{Kết luận và hướng phát triển}
+Bài tập đã triển khai cơ chế điều chỉnh số vòng trên backbone Zero-DCE đóng băng, huấn luyện đầy đủ 485 cặp với bốn điều kiện thành 1940 mẫu, giữ nguyên cấu hình 1200 epoch và chạy ba seed. Notebook mới tái đánh giá bằng checkpoint đã lưu và cung cấp outputs, bảng CSV cùng hình minh họa có thể truy vết.
+
+Kết quả cho thấy lợi ích rõ ở hai điều kiện GT nhân 0.45 và 0.6. Trên eval15 gốc, hệ thống bằng fixed-8 do toàn bộ ảnh đi qua guard. Trên LOLv2-real, PSNR trung bình giảm khoảng 0.2022 dB trong khi SSIM tăng khoảng 0.001555. Kết luận phù hợp là phương pháp hữu ích trong một số điều kiện giả lập, nhưng chưa chứng minh cải thiện khái quát trên ảnh thiếu sáng thật.
+
+Hướng tiếp theo là thiết kế validation độc lập, kiểm tra đặc trưng có thông tin không gian hoặc nhiễu, nghiên cứu mục tiêu lựa chọn số vòng phù hợp hơn và đo latency triển khai. Đây là các đề xuất nghiên cứu tiếp, chưa được thực hiện trong báo cáo. Mọi thay đổi cần được quyết định bằng train/validation và giữ tập test cho đánh giá cuối, thay vì chỉnh mô hình theo các kết quả test đã quan sát.

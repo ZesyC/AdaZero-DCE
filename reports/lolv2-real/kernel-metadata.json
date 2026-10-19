@@ -1,0 +1,16 @@
+{
+  "id": "sangtranminh211/adazero-dce-lolv2-real-test-20261019",
+  "title": "AdaZero DCE LOLv2 Real Test 20261019",
+  "code_file": "lolv2.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "sangtranminh211/adazero-dce-full-20261019"
+  ],
+  "model_sources": []
+}

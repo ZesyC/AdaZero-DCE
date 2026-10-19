@@ -1,0 +1,16 @@
+{
+  "fixed_psnr_mean": 18.05978623568612,
+  "fixed_psnr_std": 0.0,
+  "adaptive_psnr_mean": 17.857570973235124,
+  "adaptive_psnr_std": 0.017531682599946353,
+  "delta_psnr_mean": -0.20221526245099566,
+  "delta_psnr_std": 0.01753168259994604,
+  "fixed_ssim_mean": 0.5797996407747269,
+  "fixed_ssim_std": 0.0,
+  "adaptive_ssim_mean": 0.5813543089230855,
+  "adaptive_ssim_std": 0.0003004490129998689,
+  "delta_ssim_mean": 0.0015546681483586632,
+  "delta_ssim_std": 0.0003004490129998605,
+  "n_mean": 7.796666666666667,
+  "n_std": 0.009428090415820432
+}

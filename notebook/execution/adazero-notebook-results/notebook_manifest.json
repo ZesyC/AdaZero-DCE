@@ -1,0 +1,28 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "lolv1_records": 180,
+  "lolv2_records": 300,
+  "model_hashes": {
+    "Epoch99.pth": "a4395acb874f320375d9704997cef874eaaaaa26a1777ceb29a92b70f74c3612",
+    "head_seed0.pth": "f045c7e2abd5f636c2d43cbaeda9eaf50ec1b8245d6f11739d0a610818bd4f2c",
+    "head_seed1.pth": "e928840dc6b9ef6690dded499d66bb36e91ea946160fb491181b5b6a0a410e8f",
+    "head_seed2.pth": "1c3165b10dd5ac0c7c8cb859edf2274cd8eaa936e4fd78008c27bfbf15ffe5ba"
+  },
+  "source_hashes": {
+    "zero_dce_adaptive_n.py": "49e687e176f4e0608873b5fc7ef5cea053abb7dc2507bd0a89b9944beb0363b1",
+    "experiment.py": "68f7a3357321c32939cbad4d50b6d8814a05fa604595484ef1994aa970de538e",
+    "infer.py": "abb68f8c65de3a66d2a03e524cf793d8d955258ba6b56099995517c614960ba4",
+    "tests/test_adaptive.py": "7e29d85682a58a09e22c43c42dc0c470a498dbbee502f5678ed859784cc7333a",
+    "AdaZero-DCE_code/model.py": "c72e8f9080db6dd338099d17576053cdb80601bd4de74b7be5bc97963d7e3e43",
+    "AdaZero-DCE_code/snapshots/Epoch99.pth": "a4395acb874f320375d9704997cef874eaaaaa26a1777ceb29a92b70f74c3612"
+  },
+  "training": "Historical full LOLv1 artifact, not rerun",
+  "evaluation": "New inference and metrics in this notebook",
+  "reproduction_atol": 1e-06,
+  "gpu": "Tesla T4",
+  "torch": "2.11.0+cu128"
+}

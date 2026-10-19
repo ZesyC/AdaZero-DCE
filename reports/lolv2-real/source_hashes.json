@@ -1,0 +1,7 @@
+{
+  "evaluate_lolv2.py": "d5d440091f8ec773b50e5b814c99c74c691fbf8d2d9e723f86b23c788b207564",
+  "tests/test_lolv2.py": "9da5ac61fcab58dee35fbe750d58c4ae389154bf5ee450d3bd5a9b2db60b5015",
+  "reports/full/verification.json": "3dccbbb75b8a9f178089ba9dd2cdc7d67d20583a1b6bad0452e50d971a26dc73",
+  "reports/full/source_hashes.json": "4908562512197f74fe54dd14393684a46dd963aead2f45e1a1303ce242263924",
+  "reports/lolv2-real/source_files.csv": "8b290cb45d5b6c92e12ee37e79d6d3327b5667085ad961ed3dd416283e28acd5"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "sangtranminh211/adazero-dce-complete-evaluation-report",
+  "title": "AdaZero DCE Complete Evaluation Report",
+  "code_file": "runner.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "soumikrakshit/lol-dataset"
+  ],
+  "kernel_sources": [
+    "sangtranminh211/adazero-dce-full-20261019",
+    "sangtranminh211/adazero-dce-lolv2-real-test-20261019"
+  ],
+  "competition_sources": [],
+  "model_sources": []
+}

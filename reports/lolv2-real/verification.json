@@ -1,0 +1,18 @@
+{
+  "test_pairs": 100,
+  "downloaded_files": 200,
+  "downloaded_bytes": 75970040,
+  "downloaded_train_files": 0,
+  "evaluations": 300,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "checkpoints_match_lolv1_full": true,
+  "all_model_hashes_unchanged": true,
+  "primary_metrics_recomputed_from_per_image_csv": true,
+  "normalization_reused": true,
+  "new_source_hashes_match_submitted": true,
+  "dark_guard_n8_and_equal_outputs_verified": true
+}
