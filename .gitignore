@@ -1,0 +1,28 @@
+__pycache__/
+.venv/
+data/
+runs/
+kaggle/generated*/
+*.zip
+
+# Temporary report builds and inspection artifacts
+tmp/
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.synctex.gz
+report/main.pdf
+.DS_Store
+
+# Local planning and maintenance notes (keep on disk)
+/adazero-dce-plan.md
+/adazero-dce-luu-y.md
+/reports/repo-sync-notes.md
+
+# Local adaptive module
+/zero_dce_adaptive_n.py
+
+/kaggle/
+
+/tests/
