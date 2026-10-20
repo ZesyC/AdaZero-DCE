@@ -5,7 +5,7 @@ Bìa và cách tổ chức theo report_mau.pdf: Phenikaa, mục lục, các mụ
 giảng viên TS. Đặng Thị Thúy An; lớp Mạng nơron và học sâu-1-1-26(N02).
 
 Số liệu: `../notebook/execution/adazero-notebook-results/`, chạy mới trên Kaggle.
-Các bảng LaTeX được xuất từ CSV; hình lấy nguyên từ notebook. Loss là lịch sử
+Các bảng LaTeX được xuất từ CSV; hình lấy từ kết quả chương trình thực nghiệm. Loss là lịch sử
 train, không phải một lần train mới. Logo trích từ PDF mẫu do người dùng cung cấp.
 
 Mở `main.tex` hoặc thư mục này trong trình biên tập LaTeX. Biên dịch bằng XeLaTeX

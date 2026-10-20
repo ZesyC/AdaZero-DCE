@@ -43,7 +43,7 @@
 {\large Hà Nội, tháng 10 năm 2026}
 \end{titlepage}
 \pagenumbering{roman}
-\begingroup\small\setstretch{1}
+\begingroup\small\setstretch{0.93}
 \tableofcontents
 \endgroup
 \clearpage
@@ -57,16 +57,16 @@
 \bibitem{varlide} W. Dong, H. Zhou, J. Lin và J. Chen, ``Zero-Reference Joint Low-Light Enhancement and Deblurring via Visual Autoregressive Modeling with VLM-Derived Modulation,'' arXiv:2511.18591, 2025. \url{https://arxiv.org/abs/2511.18591}.
 \bibitem{ssim} Z. Wang, A. C. Bovik, H. R. Sheikh và E. P. Simoncelli, ``Image Quality Assessment: From Error Visibility to Structural Similarity,'' IEEE Transactions on Image Processing, 13(4), 600--612, 2004.
 \bibitem{skimage} scikit-image, tài liệu \texttt{skimage.metrics.structural\_similarity}. \url{https://scikit-image.org/docs/stable/api/skimage.metrics.html}. Truy cập ngày 19/10/2026.
-\bibitem{artifact} Nhóm thực hiện, ``AdaZero DCE Complete Evaluation Report,'' notebook Kaggle và các bảng CSV đi kèm, ngày 19/10/2026. \url{https://www.kaggle.com/code/sangtranminh211/adazero-dce-complete-evaluation-report}. Notebook riêng tư; bản đã thực thi được lưu trong thư mục \texttt{notebook/} của dự án.
+\bibitem{artifact} Nhóm thực hiện, ``AdaZero DCE Complete Evaluation Report,'' chương trình thực nghiệm trên Kaggle và các bảng CSV đi kèm, ngày 19/10/2026. \url{https://www.kaggle.com/code/sangtranminh211/adazero-dce-complete-evaluation-report}. Chương trình được lưu ở chế độ riêng tư; bản kèm kết quả thực thi nằm trong thư mục \texttt{notebook/} của dự án.
 \end{thebibliography}
 \clearpage
 \appendix
 \section{Bảng kết quả chi tiết và khả năng tái lập}
 \input{tables/seeds}
 \subsection{Quy trình chạy lại}
-Cài thư viện theo \texttt{requirements.txt}. Để tái lập huấn luyện head, dùng \texttt{experiment.py} với \texttt{--train-pairs 485 --epochs 1200 --seeds 0 1 2}. Đây là lệnh huấn luyện; notebook báo cáo không gọi lệnh này. Để chỉ kiểm tra kết quả, sử dụng notebook đã cung cấp cùng hai nguồn output Kaggle của lần train full và lần đánh giá LOLv2 trước đó.
+Cài thư viện theo \texttt{requirements.txt}. Để tái lập huấn luyện head, dùng \texttt{experiment.py} với \texttt{--train-pairs 485 --epochs 1200 --seeds 0 1 2}. Đây là lệnh huấn luyện; quy trình đánh giá lại không thực hiện bước này. Để kiểm tra kết quả, sử dụng chương trình thực nghiệm được cung cấp cùng hai nguồn kết quả trên Kaggle của lần huấn luyện đầy đủ và lần đánh giá LOLv2 trước đó.
 
-Notebook lần lượt kiểm tra SHA256, tải dữ liệu test, chạy inference, tính metric, xuất CSV và kiểm tra sai khác so với artifact trước trong sai số tuyệt đối $10^{-6}$. Tất cả cell cần hoàn tất và cell cuối phải in thông báo PASS. Bản có outputs được tạo bằng thực thi \texttt{nbclient} trên Kaggle rồi tải về, không chèn số liệu thủ công.
+Quy trình tái lập lần lượt kiểm tra SHA256, tải dữ liệu kiểm tra, chạy suy luận, tính các chỉ số chất lượng, xuất CSV và đối chiếu với kết quả đã lưu trong sai số tuyệt đối $10^{-6}$. Mọi khối lệnh phải thực thi thành công; khối kiểm tra cuối cùng phải trả về thông báo PASS. Tệp kèm kết quả đầu ra được tạo bằng \texttt{nbclient} trên Kaggle rồi tải về, không chèn số liệu thủ công.
 
-Các bảng trong báo cáo được sinh từ CSV của lần chạy này. Manifest lưu seed, mã băm checkpoint, phiên bản PyTorch, GPU và số bản ghi. Lịch sử loss được đọc từ lần train full trước đó; không diễn giải đồ thị này là một lần huấn luyện mới. Thời gian inference trong notebook bao gồm xử lý và tính metric, không phải phép đo latency triển khai.
+Các bảng trong báo cáo được sinh từ CSV của lần chạy này. Manifest lưu seed, mã băm checkpoint, phiên bản PyTorch, GPU và số bản ghi. Lịch sử loss được đọc từ lần train full trước đó; không diễn giải đồ thị này là một lần huấn luyện mới. Thời gian thực hiện quy trình đánh giá bao gồm suy luận, xử lý dữ liệu và tính chỉ số chất lượng; số đo này không đại diện cho độ trễ triển khai.
 \end{document}

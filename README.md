@@ -37,6 +37,23 @@ PSNR/SSIM cho hai nhánh. Không đối chiếu SSIM tuyệt đối với số k
 GT nhân hệ số là giả lập sRGB; chưa chứng minh cải thiện khái quát trên ảnh thật.
 Trên LOLv2, cả ba seed đều giảm PSNR, dù SSIM tăng nhẹ.
 
+## Ưu điểm và giới hạn
+
+- Số vòng thích ứng giúp hạn chế tăng sáng quá mức trên ảnh vừa tối; đo được
+  +1.08 và +3.26 dB ở GT×0.45/0.6 so với Zero-DCE baseline (fixed-8).
+- Head khoảng 10K tham số, không cần VLM hoặc mô hình phụ trợ ngoài DCE-Net;
+  train được trên CPU với chi phí thấp. Thực tế khoảng 6.49–6.76 giây/head khi
+  đã có cache; tạo oracle là bước riêng, đã dùng GPU trong lần chạy này.
+- Ngưỡng bảo vệ ảnh rất tối giữ kết quả không tụt trên LOLv1 eval15 gốc.
+- DCE-Net đóng băng hoàn toàn, gắn thêm head mà không train lại baseline.
+
+Mức tăng trên chỉ được chứng minh ở ảnh giả lập bằng cách nhân GT, chưa được
+chứng minh trên ảnh vừa tối thật. Ảnh thật bằng baseline trên LOLv1 hoặc hơi
+kém theo PSNR trung bình toàn tập trên LOLv2-real (khoảng -0.20 dB); một số ảnh
+riêng lẻ có thể giảm nhiều hơn. Head hiện học theo phân bố LOLv1 và chưa khái
+quát tốt sang LOLv2-real. Ý tưởng thích ứng đã có trong VAR-LIDE; đóng góp của
+bài tập là cách làm nhẹ và bảng định lượng tự thực hiện so với fixed-8.
+
 ## Sử dụng
 
 ```sh
