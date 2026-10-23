@@ -6,6 +6,7 @@
 \usepackage{amsmath,amssymb,graphicx,booktabs,array,longtable,tabularx,float,setspace}
 \usepackage[unicode,hidelinks]{hyperref}
 \usepackage{caption}
+\usepackage{indentfirst}
 \captionsetup{font=small,labelfont=bf}
 \renewcommand{\figurename}{Hình}
 \renewcommand{\tablename}{Bảng}
@@ -43,6 +44,15 @@
 {\large Hà Nội, tháng 10 năm 2026}
 \end{titlepage}
 \pagenumbering{roman}
+\section*{TÓM TẮT}
+Tăng cường ảnh thiếu sáng bằng Zero-DCE thường sử dụng cố định tám bước biến đổi đường cong. Tuy nhiên, số bước này có thể làm ảnh tăng sáng vượt mức cần thiết trong một số điều kiện. Báo cáo trình bày AdaZero-DCE, một phương pháp dự đoán số vòng lặp từ đặc trưng độ sáng trong khi giữ nguyên toàn bộ trọng số DCE-Net. Bộ hồi quy MLP có cấu trúc 10--128--64--1, gồm 9729 tham số, sử dụng các thống kê độ sáng và histogram của ảnh đầu vào. Cơ chế bảo vệ giữ tám vòng cho ảnh có độ sáng trung bình nhỏ hơn 0.10.
+
+Bộ hồi quy được huấn luyện trên 1940 mẫu tạo từ 485 cặp ảnh LOLv1, gồm ảnh thiếu sáng gốc và ba mức giả lập từ ảnh tham chiếu. Thực nghiệm sử dụng ba seed và so sánh số vòng thích ứng với fixed-8 bằng cùng cách tính PSNR và SSIM. Trên eval15, tại hai mức giả lập GT nhân 0.45 và 0.6, PSNR trung bình tăng lần lượt 1.08 và 3.26 dB; SSIM cũng tăng. Trên ảnh gốc, kết quả bằng baseline. Đánh giá khái quát trên 100 cặp LOLv2-real, không huấn luyện lại, cho thấy PSNR giảm khoảng 0.20 dB và SSIM tăng nhẹ khoảng 0.001555.
+
+Kết quả cho thấy cách chọn số vòng nhẹ có ích trên một số điều kiện giả lập, nhưng chưa chứng minh được cải thiện trên ảnh vừa tối chụp thật hoặc khả năng khái quát tốt ngoài LOLv1. Đóng góp của báo cáo là cách triển khai gọn và phép so sánh định lượng có kiểm soát; ý tưởng điều chỉnh thích ứng đã xuất hiện trong các nghiên cứu trước.
+
+\textbf{Từ khóa:} tăng cường ảnh thiếu sáng; Zero-DCE; số vòng lặp thích ứng; hồi quy độ sáng; LOLv1; LOLv2-real.
+\clearpage
 \begingroup\small\setstretch{0.93}
 \tableofcontents
 \endgroup

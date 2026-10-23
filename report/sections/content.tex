@@ -131,6 +131,7 @@ Mean, std, histogram $\longrightarrow$ guard hoặc head $\longrightarrow n$\\[4
 Áp dụng $n$ bước đầu tiên $\longrightarrow$ ảnh tăng cường
 }}
 \end{center}
+
 \textbf{Nhận xét:} Guard đảm bảo nhánh ảnh rất tối trả về đúng kết quả fixed-8. Điều này không chứng minh head dự đoán tốt cho các ảnh đó, bởi head đã bị bỏ qua. Khi báo cáo kết quả cần chỉ ra tỷ lệ ảnh đi qua guard để người đọc biết phần nào thực sự kiểm tra head.
 
 \section{Thiết kế thực nghiệm và kết quả}
@@ -160,11 +161,11 @@ Quy trình đánh giá gồm các bước chuẩn bị môi trường, kiểm tr
 \subsection{Kết quả trên LOLv1 eval15}
 \input{tables/lolv1}
 \fig{lolv1_deltas.png}{1}{Chênh lệch adaptive so với fixed-8 trên eval15. Thanh sai số thể hiện độ lệch chuẩn qua ba seed.}
-\textbf{Nhận xét:} Trên ảnh low gốc, cả 15 ảnh đều có mean dưới 0.10 và được giữ ở $n=8$. Vì hai nhánh tạo cùng đầu ra, các metric bằng nhau. Kết quả này xác nhận tác dụng bảo toàn của guard trên tập đang xét, không phải một cải thiện do head học được.
+\textbf{Nhận xét:} Trên 15 ảnh low gốc, fixed-8 và adaptive đạt cùng PSNR trung bình 14.8611 dB và SSIM 0.562653. Ý nghĩa và giới hạn của kết quả này được phân tích tại Mục~\ref{sec:guard}.
 
 Ở mức GT$\times0.3$, SSIM tăng nhẹ nhưng PSNR giảm. Hai metric phản ánh các khía cạnh khác nhau, nên không thể kết luận adaptive tốt hơn đồng thời theo cả hai chỉ số ở điều kiện này. Ở mức GT$\times0.45$ và GT$\times0.6$, PSNR và SSIM cùng tăng, với mức tăng PSNR lớn hơn ở hệ số 0.6. Đây là bằng chứng phù hợp với giả thuyết giảm số vòng có ích khi biến đổi cường độ đầu vào đơn giản và tương đối gần ảnh đủ sáng.
 
-\fig{comparison_1.0.png}{1}{Ví dụ eval15 gốc: guard chọn $n=8$, fixed-8 và adaptive trùng nhau.}
+\fig{comparison_1.0.png}{1}{Ví dụ eval15 gốc: fixed-8 và adaptive tạo cùng đầu ra.}
 \fig{comparison_0.3.png}{1}{Ví dụ GT$\times0.3$: cùng một ảnh và một seed để minh họa, không thay cho kết quả trung bình.}
 \fig{comparison_0.45.png}{1}{Ví dụ GT$\times0.45$ với đầu vào, fixed-8, adaptive và GT.}
 \fig{comparison_0.6.png}{1}{Ví dụ GT$\times0.6$: đối chiếu ảnh đầu ra trong cùng điều kiện.}
@@ -183,31 +184,31 @@ Trên 13 ảnh không đi qua guard, chênh lệch PSNR trung bình lần lượ
 
 \textbf{Head nhẹ, không cần VLM hoặc mô hình phụ trợ.} Head chỉ có 9729 tham số, xấp xỉ 10K, và sử dụng mean, std cùng histogram độ sáng. Ngoài DCE-Net nền, phương pháp không cần VLM hay một mạng ngoài để chấm độ sáng. Head có thể huấn luyện trên CPU với chi phí thấp, phù hợp ngân sách vài phút: trong lần train full đã lưu, thời gian thực tế chỉ khoảng $6.49$--$6.76$ giây cho mỗi head với 1200 epoch, khi đã có cache đặc trưng và oracle. Bước tạo oracle là công đoạn riêng và đã dùng GPU T4 trong thí nghiệm này.
 
-\textbf{Bảo vệ kết quả trên ảnh rất tối.} Ngưỡng mean $<0.10$ giữ $n=8$ cho ảnh rất tối. Trên LOLv1 eval15 gốc, cả 15 ảnh đều đi qua nhánh này, nên kết quả được giữ nguyên và không tụt so với baseline. Ưu điểm này đến từ quy tắc bảo vệ, không phải bằng chứng head đã cải thiện những ảnh đó.
+\textbf{Bảo toàn kết quả trên LOLv1 gốc.} Trên 15 ảnh eval15 gốc, phương pháp giữ nguyên PSNR và SSIM so với baseline. Phạm vi của ưu điểm này được làm rõ tại Mục~\ref{sec:guard}.
 
 \textbf{Gắn thêm mà không cần train lại baseline.} DCE-Net được đóng băng hoàn toàn; chỉ head hồi quy được học từ oracle-n của tập train. Cơ chế chọn số vòng được bổ sung vào chuỗi đường cong sẵn có, không thay trọng số backbone. Cách tổ chức này thuận tiện cho việc tận dụng checkpoint có sẵn và so sánh trực tiếp với fixed-8.
 
 \subsection{Nhược điểm và phạm vi đóng góp}
 \textbf{Mức tăng hiện mới được chứng minh trên ảnh giả lập.} Hai mức tăng $1.08$ và $3.26$ dB được đo trên ảnh GT nhân với hệ số, không phải trên một tập ảnh vừa tối chụp thật. Phép nhân này chưa mô phỏng đầy đủ nhiễu, màu sắc và quá trình thu nhận ảnh. Vì vậy, kết quả chưa chứng minh khả năng tránh tăng sáng quá mức trên ảnh vừa tối thật.
 
-\textbf{Ảnh thật tương đương hoặc hơi kém baseline theo PSNR trung bình toàn tập.} Trên LOLv1 eval15 gốc, phương pháp bằng fixed-8 do guard giữ nguyên số vòng. Trên LOLv2-real, PSNR trung bình ba seed giảm khoảng $0.20$ dB, trong khi SSIM tăng nhẹ khoảng $0.001555$. Mức giảm toàn tập nhỏ không có nghĩa mọi ảnh chỉ giảm nhẹ: phân tích nhóm 13 ảnh không đi qua guard ở phần kết quả cho thấy một số trường hợp giảm rõ hơn.
+\textbf{Ảnh thật tương đương hoặc hơi kém baseline theo PSNR trung bình toàn tập.} Trên LOLv1 eval15 gốc, phương pháp đạt kết quả bằng fixed-8. Trên LOLv2-real, PSNR trung bình ba seed giảm khoảng $0.20$ dB, trong khi SSIM tăng nhẹ khoảng $0.001555$. Mức giảm toàn tập nhỏ không có nghĩa mọi ảnh chỉ giảm nhẹ: phân tích nhóm 13 ảnh không đi qua guard ở phần kết quả cho thấy một số trường hợp giảm rõ hơn.
 
 \textbf{Chưa khái quát tốt ra ngoài phân bố LOLv1.} Head và thống kê chuẩn hóa hiện được học từ LOLv1, gồm ảnh low gốc cùng các mức sáng giả lập. Kết quả trên LOLv2-real cho thấy hiệu quả chuyển sang tập dữ liệu khác còn hạn chế. Chưa có bằng chứng thực nghiệm để khẳng định head hoạt động tốt trên các phân bố ảnh khác.
 
 \textbf{Ý tưởng thích ứng đã có trong công trình trước.} Cơ chế điều chỉnh đường cong thích ứng đã xuất hiện trong VAR-LIDE \cite{varlide}. Do đó, đóng góp của bài tập là một cách triển khai nhẹ dựa trên thống kê độ sáng, head có giám sát và bảng đo định lượng độc lập so với fixed-8 trong cùng implementation. ``Độc lập'' ở đây nghĩa là tự thực hiện phép đo kiểm chứng của bài tập, không phải tuyên bố ý tưởng thích ứng hoàn toàn mới hoặc đã tốt hơn VAR-LIDE.
 
-\subsection{Vì sao hiệu quả khác nhau giữa ảnh giả lập và ảnh thật?}
+\subsection{Khác biệt hiệu quả giữa ảnh giả lập và ảnh thật}
 Ba điều kiện giả lập được tạo bằng nhân trực tiếp GT với một hệ số. Chúng giữ nguyên cấu trúc cảnh và nhiều đặc trưng của GT; do đó, vấn đề điều chỉnh cường độ tương đối đơn giản hơn ảnh chụp thiếu sáng thật. Trong trường hợp này, sử dụng ít bước hơn có thể giúp tránh điều chỉnh vượt mức cần thiết. Kết quả tăng đồng thời PSNR/SSIM ở hệ số 0.45 và 0.6 phù hợp với cách giải thích đó.
 
 Ảnh thật có thể khác về nhiễu, màu sắc, chiếu sáng không đồng đều và xử lý của camera. Vector 10 chiều không mã hóa những yếu tố này một cách trực tiếp. Hai ảnh có mean gần nhau không nhất thiết cần cùng số bước. Đây là một giải thích khả dĩ cho kết quả LOLv2, nhưng chưa phải kết luận nhân quả vì dự án chưa có ablation riêng cho từng yếu tố.
 
-\subsection{Vai trò và giới hạn của guard}
+\subsection{Vai trò và giới hạn của guard}\label{sec:guard}
 Ngưỡng 0.10 giúp tránh thay đổi những ảnh rất tối theo thống kê toàn cục. Trên eval15 gốc, nó phủ toàn bộ tập; trên LOLv2, nó phủ 87\%. Do đó, mức ``không giảm'' trên eval15 chỉ chứng minh quy tắc đã bảo toàn baseline ở những ảnh đó. Không nên sử dụng kết quả này để khẳng định head đúng cho mọi ảnh thiếu sáng.
 
 Ngưỡng được giữ nguyên từ kế hoạch. Nhóm không chọn lại ngưỡng bằng LOLv2 Test sau khi quan sát kết quả xấu. Nếu cần nghiên cứu ngưỡng tốt hơn, phải xây dựng tập validation riêng trong train và khóa cấu hình trước lần đánh giá cuối. Việc chỉnh trực tiếp theo test sẽ làm phép đo sau đó mất tính độc lập.
 
-\subsection{Train dài hơn có bảo đảm kết quả tăng?}
-Không có bảo đảm như vậy. SmoothL1 tối ưu dự đoán nhãn oracle, còn kết quả cuối phụ thuộc vào bước làm tròn, guard và mức sai khác giữa các ảnh ứng viên. Một thay đổi nhỏ ở đầu ra liên tục có thể không đổi $n$, hoặc làm $n$ nhảy sang số nguyên khác. Vì thế, loss giảm không dẫn đến PSNR/SSIM tăng đơn điệu.
+\subsection{Ảnh hưởng của thời gian huấn luyện đến chất lượng ảnh}
+Kéo dài huấn luyện không bảo đảm PSNR/SSIM trên tập kiểm tra tăng. SmoothL1 tối ưu dự đoán nhãn oracle, còn kết quả cuối phụ thuộc vào bước làm tròn, guard và mức sai khác giữa các ảnh ứng viên. Một thay đổi nhỏ ở đầu ra liên tục có thể không đổi $n$, hoặc làm $n$ nhảy sang số nguyên khác. Vì thế, loss giảm không dẫn đến PSNR/SSIM tăng đơn điệu.
 
 Lần train full đã tuân thủ 1200 epoch cho 1940 mẫu và ba seed. Kết quả hiện tại cho thấy hiệu quả phụ thuộc miền dữ liệu, thay vì chỉ phụ thuộc số epoch. Chưa có thí nghiệm sweep số epoch với validation độc lập, nên báo cáo không suy diễn rằng kéo dài huấn luyện sẽ giải quyết hạn chế chuyển miền. Tương tự, ba seed ổn định về dấu chênh lệch không thay thế cho đánh giá trên nhiều bộ dữ liệu.
 
